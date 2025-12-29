@@ -30,12 +30,12 @@ pub fn migrate<T: Transaction>(
 
     for mut migration in migrations.into_iter() {
         if let Target::Version(input_target) | Target::FakeVersion(input_target) = target {
-            if input_target < migration.version() {
+            if input_target < migration.version() && *migration.prefix() != crate::runner::Type::Rerunnable {
+                let migration_name = migration.name();
                 log::info!(
-                    "stopping at migration: {}, due to user option",
-                    input_target
+                    "skipping migration: {migration_name}, due to user option {input_target}",
                 );
-                break;
+                continue;
             }
         }
 

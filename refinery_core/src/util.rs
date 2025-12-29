@@ -12,7 +12,7 @@ pub type SchemaVersion = i32;
 #[cfg(feature = "int8-versions")]
 pub type SchemaVersion = i64;
 
-const STEM_RE: &str = r"^([U|V])(\d+(?:\.\d+)?)__(\w+)";
+const STEM_RE: &str = r"^([U|V|R])(\d+(?:\.\d+)?)__(\w+)";
 
 /// Matches the stem of a migration file.
 fn file_stem_re() -> &'static Regex {
@@ -62,6 +62,7 @@ pub fn parse_migration_name(name: &str) -> Result<(Type, SchemaVersion, String),
     let prefix = match &captures[1] {
         "V" => Type::Versioned,
         "U" => Type::Unversioned,
+        "R" => Type::Rerunnable,
         _ => unreachable!(),
     };
 
@@ -92,7 +93,7 @@ pub fn find_migration_files(
                 Some(file_name) if re.is_match(file_name) => true,
                 Some(file_name) => {
                     log::warn!(
-                        "File \"{}\" does not adhere to the migration naming convention. Migrations must be named in the format [U|V]{{1}}__{{2}}.sql or [U|V]{{1}}__{{2}}.rs, where {{1}} represents the migration version and {{2}} the name.",
+                        "File \"{}\" does not adhere to the migration naming convention. Migrations must be named in the format [U|V|R]{{1}}__{{2}}.sql or [U|V|R]{{1}}__{{2}}.rs, where {{1}} represents the migration version and {{2}} the name.",
                         file_name
                     );
                     false

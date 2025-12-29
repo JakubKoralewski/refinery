@@ -18,6 +18,7 @@ use std::fmt::Formatter;
 pub enum Type {
     Versioned,
     Unversioned,
+    Rerunnable
 }
 
 impl fmt::Display for Type {
@@ -25,6 +26,7 @@ impl fmt::Display for Type {
         let version_type = match self {
             Type::Versioned => "V",
             Type::Unversioned => "U",
+            Type::Rerunnable => "R",
         };
         write!(f, "{version_type}")
     }
@@ -35,6 +37,7 @@ impl fmt::Debug for Type {
         let version_type = match self {
             Type::Versioned => "Versioned",
             Type::Unversioned => "Unversioned",
+            Type::Rerunnable => "Rerunnable",
         };
         write!(f, "{version_type}")
     }
@@ -77,7 +80,7 @@ pub struct Migration {
 
 impl Migration {
     /// Create an unapplied migration, name and version are parsed from the input_name,
-    /// which must be named in the format (U|V){1}__{2}.rs where {1} represents the migration version and {2} the name.
+    /// which must be named in the format (U|V|R){1}__{2}.rs where {1} represents the migration version and {2} the name.
     pub fn unapplied(input_name: &str, sql: &str) -> Result<Migration, Error> {
         let (prefix, version, name) = parse_migration_name(input_name)?;
 
