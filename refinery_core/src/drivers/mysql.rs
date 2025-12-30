@@ -43,7 +43,7 @@ fn query_applied_migrations(
 impl Transaction for Conn {
     type Error = MError;
 
-    fn execute<'a, T: Iterator<Item = &'a str>>(
+    fn execute<'a, S: AsRef<str>, T: Iterator<Item = S>>(
         &mut self,
         queries: T,
     ) -> Result<usize, Self::Error> {
@@ -61,7 +61,7 @@ impl Transaction for Conn {
 impl Transaction for PooledConn {
     type Error = MError;
 
-    fn execute<'a, T: Iterator<Item = &'a str>>(
+    fn execute<'a, S: AsRef<str>, T: Iterator<Item = S>>(
         &mut self,
         queries: T,
     ) -> Result<usize, Self::Error> {

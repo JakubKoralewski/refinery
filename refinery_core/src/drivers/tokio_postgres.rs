@@ -11,23 +11,22 @@ async fn query_applied_migrations(
     query: &str,
 ) -> Result<Vec<Migration>, PgError> {
     let rows = transaction.query(query, &[]).await?;
-    let mut applied = Vec::new();
-    for row in rows.into_iter() {
+    let applied = rows.into_iter().map(|row| {
         let version = row.get(0);
         let applied_on: String = row.get(2);
         // Safe to call unwrap, as we stored it in RFC3339 format on the database
         let applied_on = OffsetDateTime::parse(&applied_on, &Rfc3339).unwrap();
         let checksum: String = row.get(3);
 
-        applied.push(Migration::applied(
+        Migration::applied(
             version,
             row.get(1),
             applied_on,
             checksum
                 .parse::<u64>()
                 .expect("checksum must be a valid u64"),
-        ));
-    }
+        )
+    }).collect::<Vec<_>>();
     Ok(applied)
 }
 
@@ -35,14 +34,14 @@ async fn query_applied_migrations(
 impl AsyncTransaction for Client {
     type Error = PgError;
 
-    async fn execute<'a, T: Iterator<Item = &'a str> + Send>(
+    async fn execute<'a, S: AsRef<str> + Send, T: Iterator<Item = S> + Send>(
         &mut self,
         queries: T,
     ) -> Result<usize, Self::Error> {
         let transaction = self.transaction().await?;
         let mut count = 0;
         for query in queries {
-            transaction.batch_execute(query).await?;
+            transaction.batch_execute(query.as_ref()).await?;
             count += 1;
         }
         transaction.commit().await?;

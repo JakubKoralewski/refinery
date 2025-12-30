@@ -75,25 +75,33 @@ pub enum Kind {
 }
 
 // Helper trait for adding custom messages and applied migrations to Connection error's.
-pub trait WrapMigrationError<T, E> {
-    fn migration_err(self, msg: &str, report: Option<&[Migration]>) -> Result<T, Error>;
+pub trait WrapMigrationError<'e, T, E, Iter: Iterator<Item=Migration>> {
+    fn migration_err(self, msg: &str, report: impl FnOnce() -> Iter) -> Result<T, Error>;
 }
 
-impl<T, E> WrapMigrationError<T, E> for Result<T, E>
+impl<'e, T, E, Iter: Iterator<Item=Migration>> WrapMigrationError<'e, T, E, Iter> for Result<T, E>
 where
     E: std::error::Error + Send + Sync + 'static,
 {
     fn migration_err(
         self,
         msg: &str,
-        applied_migrations: Option<&[Migration]>,
+        applied_migrations: impl FnOnce() -> Iter,
     ) -> Result<T, Error> {
         match self {
             Ok(report) => Ok(report),
-            Err(err) => Err(Error {
-                kind: Box::new(Kind::Connection(msg.into(), Box::new(err))),
-                report: applied_migrations.map(|am| Report::new(am.to_vec())),
-            }),
+            Err(err) => {
+                let reportable = applied_migrations().collect::<Vec<_>>();
+                let report = if reportable.is_empty() {
+                    None
+                } else {
+                    Some(Report::new(reportable))
+                };
+                Err(Error {
+                    kind: Box::new(Kind::Connection(msg.into(), Box::new(err))),
+                    report
+                })}
+            ,
         }
     }
 }

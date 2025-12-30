@@ -29,6 +29,7 @@ siphasher = "1.0"
 thiserror = "2"
 url = "2.0"
 walkdir = "2.3.1"
+itertools = "0.14"
 
 # allow multiple versions of the same dependency if API is similar
 rusqlite = { version = ">= 0.23, <= 0.37", optional = true }

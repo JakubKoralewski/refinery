@@ -40,7 +40,7 @@ async fn query_applied_migrations<'a>(
 impl AsyncTransaction for Pool {
     type Error = MError;
 
-    async fn execute<'a, T: Iterator<Item = &'a str> + Send>(
+    async fn execute<'a, S:AsRef<str> + Send, T: Iterator<Item = S> + Send>(
         &mut self,
         queries: T,
     ) -> Result<usize, Self::Error> {
@@ -51,7 +51,7 @@ impl AsyncTransaction for Pool {
         let mut transaction = conn.start_transaction(options).await?;
         let mut count = 0;
         for query in queries {
-            transaction.query_drop(query).await?;
+            transaction.query_drop(query.as_ref()).await?;
             count += 1;
         }
         transaction.commit().await?;

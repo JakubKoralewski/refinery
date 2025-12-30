@@ -47,7 +47,7 @@ where
 {
     type Error = Error;
 
-    async fn execute<'a, T: Iterator<Item = &'a str> + Send>(
+    async fn execute<'a, St:AsRef<str> + Send, T: Iterator<Item = St> + Send>(
         &mut self,
         queries: T,
     ) -> Result<usize, Self::Error> {
@@ -56,7 +56,7 @@ where
         let mut count = 0;
         for query in queries {
             // Drop the returning `QueryStream<'a>` to avoid compiler complaning regarding lifetimes
-            if let Err(err) = self.simple_query(query).await.map(drop) {
+            if let Err(err) = self.simple_query(query.as_ref()).await.map(drop) {
                 if let Err(err) = self.simple_query("ROLLBACK TRAN T1").await {
                     log::error!("could not ROLLBACK transaction, {}", err);
                 }
