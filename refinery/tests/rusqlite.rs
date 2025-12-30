@@ -51,28 +51,28 @@ mod rusqlite {
         embed_migrations!("./tests/migrations");
 
         let migration1 =
-            Migration::unapplied("V1__initial.rs", &migrations::V1__initial::migration()).unwrap();
+            Migration::unapplied("1V__initial.rs", &migrations::1V__initial::migration()).unwrap();
 
         let migration2 = Migration::unapplied(
-            "V2__add_cars_and_motos_table.sql",
-            include_str!("./migrations/V1-2/V2__add_cars_and_motos_table.sql"),
+            "2V__add_cars_and_motos_table.sql",
+            include_str!("./migrations/1V-2/2V__add_cars_and_motos_table.sql"),
         )
         .unwrap();
 
         let migration3 = Migration::unapplied(
-            "V3__add_brand_to_cars_table",
-            include_str!("./migrations/V3/V3__add_brand_to_cars_table.sql"),
+            "3V__add_brand_to_cars_table",
+            include_str!("./migrations/3V/3V__add_brand_to_cars_table.sql"),
         )
         .unwrap();
 
         let migration4 = Migration::unapplied(
-            "V4__add_year_to_motos_table.rs",
-            &migrations::V4__add_year_to_motos_table::migration(),
+            "4V__add_year_to_motos_table.rs",
+            &migrations::4V__add_year_to_motos_table::migration(),
         )
         .unwrap();
 
         let migration5 = Migration::unapplied(
-            "V5__add_year_field_to_cars",
+            "5V__add_year_field_to_cars",
             "ALTER TABLE cars ADD year INTEGER;",
         )
         .unwrap();
@@ -568,7 +568,7 @@ mod rusqlite {
         embedded::migrations::runner().run(&mut conn).unwrap();
 
         let migration = Migration::unapplied(
-            "V4__add_year_field_to_cars",
+            "4V__add_year_field_to_cars",
             "ALTER TABLE cars ADD year INTEGER;",
         )
         .unwrap();
@@ -599,7 +599,7 @@ mod rusqlite {
         embedded::migrations::runner().run(&mut conn).unwrap();
 
         let migration = Migration::unapplied(
-            "V2__add_year_field_to_cars",
+            "2V__add_year_field_to_cars",
             "ALTER TABLE cars ADD year INTEGER;",
         )
         .unwrap();
@@ -631,7 +631,7 @@ mod rusqlite {
         missing::migrations::runner().run(&mut conn).unwrap();
 
         let migration1 = Migration::unapplied(
-            "V1__initial",
+            "1V__initial",
             concat!(
                 "CREATE TABLE persons (",
                 "id int,",
@@ -643,8 +643,8 @@ mod rusqlite {
         .unwrap();
 
         let migration2 = Migration::unapplied(
-            "V2__add_cars_table",
-            include_str!("./migrations_missing/V2__add_cars_table.sql"),
+            "2V__add_cars_table",
+            include_str!("./migrations_missing/2V__add_cars_table.sql"),
         )
         .unwrap();
         let err = conn
@@ -837,8 +837,8 @@ mod rusqlite {
                 ])
                 .unwrap()
                 .assert()
-                .stdout(contains("applying migration: V2__add_cars_and_motos_table"))
-                .stdout(contains("applying migration: V3__add_brand_to_cars_table"));
+                .stdout(contains("applying migration: 2V__add_cars_and_motos_table"))
+                .stdout(contains("applying migration: 3V__add_brand_to_cars_table"));
         })
     }
 }

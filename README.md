@@ -31,8 +31,8 @@ If you are using a driver that is not yet supported, namely [`SQLx`](https://git
 
 - Add refinery to your Cargo.toml dependencies with the selected driver as feature eg: `refinery = { version = "0.8", features = ["rusqlite"]}`
 - Migrations can be defined in .sql files or Rust modules that must have a function called `migration` that returns a [`String`](https://doc.rust-lang.org/std/string/struct.String.html).
-- Migrations can be strictly versioned by prefixing the file with `V` or not strictly versioned by prefixing the file with `U`.
-- Migrations, both .sql files and Rust modules must be named in the format `[U|V]{1}__{2}.sql` or `[U|V]{1}__{2}.rs`, where `{1}` represents the migration version and `{2}` the name.
+- Migrations can be strictly versioned by prefixing the file with `V` or not strictly versioned by prefixing the file with `U`, or always run with `R`.
+- Migrations, both .sql files and Rust modules must be named in the format `{1}[U|V|R]__{2}.sql` or `{1}[U|V|R]__{2}.rs`, where `{1}` represents the migration version and `{2}` the name.
 - Migrations can be run either by embedding them in your Rust code with `embed_migrations` macro, or via [refinery_cli].
 
 NOTE:
@@ -63,7 +63,7 @@ For more library examples, refer to the [`examples`](https://github.com/rust-db/
 ```bash
 export DATABASE_URL="postgres://postgres:secret@localhost:5432/your-db"
 pushd migrations
-    # Runs ./src/V1__*.rs or ./src/V1__*.sql
+    # Runs ./src/1V__*.rs or ./src/1V__*.sql
     refinery migrate -e DATABASE_URL -p ./src -t 1
 popd
 ```
@@ -85,13 +85,13 @@ let report = embedded::migrations::runner().run_async(&mut client).await?;
 
 ### Non-contiguous VS Contiguous migrations
 
-Depending on how your project/team has been structured will define whether you want to use contiguous (adjacent) migrations `V{1}__{2}.[sql|rs]` or non-contiguous (not adjacent) migrations `U{1}__{2}.[sql|rs]`.
+Depending on how your project/team has been structured will define whether you want to use contiguous (adjacent) migrations `{1}V__{2}.[sql|rs]` or non-contiguous (not adjacent) migrations `{1}U__{2}.[sql|rs]`.
 If migration sequential numbering reflects the order they were developed and, they are deployed in the order they are numbered, you won't run into any problems using contiguous migrations.
 This is because you can be sure the next migration being run is _always_ going to have a version number greater than the previous.
 
 With non-contiguous migrations there is more flexibility in the order that the migrations can be created and deployed.
-If developer 1 creates a PR with a migration today `U11__update_cars_table.sql`, but it is reviewed for a week.
-Meanwhile, developer 2 creates a PR with migration `U12__create_model_tags.sql` that is much simpler and gets merged and deployed immediately.
+If developer 1 creates a PR with a migration today `11U__update_cars_table.sql`, but it is reviewed for a week.
+Meanwhile, developer 2 creates a PR with migration `12U__create_model_tags.sql` that is much simpler and gets merged and deployed immediately.
 This would stop developer 1's migration from ever running if you were using contiguous migrations because the next migration would need to be > 12.
 
 ## Implementation details

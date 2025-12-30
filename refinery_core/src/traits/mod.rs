@@ -139,27 +139,27 @@ mod tests {
 
     fn get_migrations() -> Vec<Migration> {
         let migration1 = Migration::unapplied(
-            "V1__initial.sql",
+            "1V__initial.sql",
             "CREATE TABLE persons (id int, name varchar(255), city varchar(255));",
         )
         .unwrap();
 
         let migration2 = Migration::unapplied(
-            "V2__add_cars_and_motos_table.sql",
+            "2V__add_cars_and_motos_table.sql",
             include_str!(
-                "../../../refinery/tests/migrations/V1-2/V2__add_cars_and_motos_table.sql"
+                "../../../refinery/tests/migrations/1V-2/2V__add_cars_and_motos_table.sql"
             ),
         )
         .unwrap();
 
         let migration3 = Migration::unapplied(
-            "V3__add_brand_to_cars_table",
-            include_str!("../../../refinery/tests/migrations/V3/V3__add_brand_to_cars_table.sql"),
+            "3V__add_brand_to_cars_table",
+            include_str!("../../../refinery/tests/migrations/3V/3V__add_brand_to_cars_table.sql"),
         )
         .unwrap();
 
         let migration4 = Migration::unapplied(
-            "V4__add_year_field_to_cars",
+            "4V__add_year_field_to_cars",
             "ALTER TABLE cars ADD year INTEGER;",
         )
         .unwrap();
@@ -195,9 +195,9 @@ mod tests {
             migrations[0].clone(),
             migrations[1].clone(),
             Migration::unapplied(
-                "V3__add_brand_to_cars_tableeee",
+                "3V__add_brand_to_cars_tableeee",
                 include_str!(
-                    "../../../refinery/tests/migrations/V3/V3__add_brand_to_cars_table.sql"
+                    "../../../refinery/tests/migrations/3V/3V__add_brand_to_cars_table.sql"
                 ),
             )
             .unwrap(),
@@ -221,9 +221,9 @@ mod tests {
             migrations[0].clone(),
             migrations[1].clone(),
             Migration::unapplied(
-                "V3__add_brand_to_cars_tableeee",
+                "3V__add_brand_to_cars_tableeee",
                 include_str!(
-                    "../../../refinery/tests/migrations/V3/V3__add_brand_to_cars_table.sql"
+                    "../../../refinery/tests/migrations/3V/3V__add_brand_to_cars_table.sql"
                 ),
             )
             .unwrap(),
@@ -293,9 +293,9 @@ mod tests {
         let mut migrations = get_migrations();
         migrations.push(
             Migration::unapplied(
-                "U0__merge_out_of_order",
+                "0U__merge_out_of_order",
                 include_str!(
-                    "../../../refinery/tests/migrations_unversioned/U0__merge_out_of_order.sql"
+                    "../../../refinery/tests/migrations_unversioned/0U__merge_out_of_order.sql"
                 ),
             )
             .unwrap(),

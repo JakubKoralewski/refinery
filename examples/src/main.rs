@@ -34,7 +34,7 @@ fn process_migration(migration: Migration) {
         // or with the `enums` feature enabled, match against migrations to run specific post-migration steps
         use migrations::EmbeddedMigration;
         match migration.into() {
-            EmbeddedMigration::Initial(m) => info!("V{}: Initialized the database!", m.version()),
+            EmbeddedMigration::Initial(m) => info!("{}V: Initialized the database!", m.version()),
             m => info!("Got a migration: {:?}", m),
         }
     }

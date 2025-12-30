@@ -10,7 +10,7 @@ Currently, [`Postgres`](https://crates.io/crates/postgres), [`Rusqlite`](https:/
 ## Usage
 
 - Migrations can be defined in .sql files or Rust modules that must have a function called `migration()` that returns a [`std::string::String`]
-- Migrations, both .sql files and Rust modules must be named in the format `V{1}__{2}.rs ` where `{1}` represents the migration version and `{2}` the name.
+- Migrations, both .sql files and Rust modules must be named in the format `{1}(U|V|R)__{2}.rs ` where `{1}` represents the migration version and `{2}` the name.
 - Migrations can be run either by embedding them on your Rust code with [`embed_migrations!`] macro, or via `refinery_cli`.
 
 [`embed_migrations!`]: macro.embed_migrations.html

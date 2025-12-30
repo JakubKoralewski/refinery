@@ -80,7 +80,7 @@ pub struct Migration {
 
 impl Migration {
     /// Create an unapplied migration, name and version are parsed from the input_name,
-    /// which must be named in the format (U|V|R){1}__{2}.rs where {1} represents the migration version and {2} the name.
+    /// which must be named in the format {1}(U|V|R)__{2}.rs where {1} represents the migration version and {2} the name.
     pub fn unapplied(input_name: &str, sql: &str) -> Result<Migration, Error> {
         let (prefix, version, name) = parse_migration_name(input_name)?;
 
@@ -168,7 +168,7 @@ impl Migration {
 
 impl fmt::Display for Migration {
     fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(fmt, "{}{}__{}", self.prefix, self.version, self.name)
+        write!(fmt, "{}{}__{}", self.version, self.prefix, self.name)
     }
 }
 

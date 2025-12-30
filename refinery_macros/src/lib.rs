@@ -88,7 +88,7 @@ fn migration_enum_quoted(migration_names: &[impl AsRef<str>]) -> TokenStream2 {
 /// When called without arguments `embed_migrations` searches for migration files on a directory called `migrations` at the root level of your crate.
 /// if you want to specify another directory call `embed_migrations!` with it's location relative to the root level of your crate.
 ///
-/// To be a valid migration module, it has to be named in the format `V{1}__{2}.{3} ` where `{1}` represents the migration version and `{2}` the name and `{3} is "rs" or "sql".
+/// To be a valid migration module, it has to be named in the format `{1}(U|V|R)__{2}.{3} ` where `{1}` represents the migration version and `{2}` the name and `{3} is "rs" or "sql".
 /// For the name alphanumeric characters plus "_" are supported.
 /// The Rust migration file must have a function named `migration()` that returns a [`std::string::String`].
 /// The SQL migration file must have valid sql instructions for the database you want it to run on.
@@ -176,7 +176,7 @@ mod tests {
             "v => panic ! (\"Invalid migration version '{}'\" , v) ",
             "} } }"
         };
-        let enums = super::migration_enum_quoted(&["V1__foo", "U3__barBAZ"]).to_string();
+        let enums = super::migration_enum_quoted(&["1V__foo", "3U__barBAZ"]).to_string();
         assert_eq!(expected, enums);
     }
 
@@ -198,17 +198,17 @@ mod tests {
             "v => panic ! (\"Invalid migration version '{}'\" , v) ",
             "} } }"
         };
-        let enums = super::migration_enum_quoted(&["V1__foo", "U3__barBAZ"]).to_string();
+        let enums = super::migration_enum_quoted(&["1V__foo", "3U__barBAZ"]).to_string();
         assert_eq!(expected, enums);
     }
 
     #[test]
     fn test_quote_fn() {
-        let migs = vec![quote!("V1__first", "valid_sql_file")];
+        let migs = vec![quote!("1V__first", "valid_sql_file")];
         let expected = concat! {
             "use refinery :: { Migration , Runner , SchemaVersion } ; ",
             "pub fn runner () -> Runner { ",
-            "let quoted_migrations : Vec < (& str , String) > = vec ! [\"V1__first\" , \"valid_sql_file\"] ; ",
+            "let quoted_migrations : Vec < (& str , String) > = vec ! [\"1V__first\" , \"valid_sql_file\"] ; ",
             "let mut migrations : Vec < Migration > = Vec :: new () ; ",
             "for module in quoted_migrations . into_iter () { ",
             "migrations . push (Migration :: unapplied (module . 0 , & module . 1) . unwrap ()) ; ",

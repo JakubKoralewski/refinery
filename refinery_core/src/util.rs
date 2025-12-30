@@ -12,7 +12,7 @@ pub type SchemaVersion = i32;
 #[cfg(feature = "int8-versions")]
 pub type SchemaVersion = i64;
 
-const STEM_RE: &str = r"^([U|V|R])(\d+(?:\.\d+)?)__(\w+)";
+const STEM_RE: &str = r"^(\d+(?:\.\d+)?)([U|V|R])__(\w+)";
 
 /// Matches the stem of a migration file.
 fn file_stem_re() -> &'static Regex {
@@ -54,12 +54,12 @@ pub fn parse_migration_name(name: &str) -> Result<(Type, SchemaVersion, String),
         .captures(name)
         .filter(|caps| caps.len() == 4)
         .ok_or_else(|| Error::new(Kind::InvalidName, None))?;
-    let version: SchemaVersion = captures[2]
+    let version: SchemaVersion = captures[1]
         .parse()
         .map_err(|_| Error::new(Kind::InvalidVersion, None))?;
 
     let name: String = (&captures[3]).into();
-    let prefix = match &captures[1] {
+    let prefix = match &captures[2] {
         "V" => Type::Versioned,
         "U" => Type::Unversioned,
         "R" => Type::Rerunnable,
@@ -93,7 +93,7 @@ pub fn find_migration_files(
                 Some(file_name) if re.is_match(file_name) => true,
                 Some(file_name) => {
                     log::warn!(
-                        "File \"{}\" does not adhere to the migration naming convention. Migrations must be named in the format [U|V|R]{{1}}__{{2}}.sql or [U|V|R]{{1}}__{{2}}.rs, where {{1}} represents the migration version and {{2}} the name.",
+                        "File \"{}\" does not adhere to the migration naming convention. Migrations must be named in the format {{1}}[U|V|R]__{{2}}.sql or {{1}}[U|V|R]__{{2}}.rs, where {{1}} represents the migration version and {{2}} the name.",
                         file_name
                     );
                     false
@@ -149,9 +149,9 @@ mod tests {
         let tmp_dir = TempDir::new().unwrap();
         let migrations_dir = tmp_dir.path().join("migrations");
         fs::create_dir(&migrations_dir).unwrap();
-        let sql1 = migrations_dir.join("V1__first.rs");
+        let sql1 = migrations_dir.join("1V__first.rs");
         fs::File::create(&sql1).unwrap();
-        let sql2 = migrations_dir.join("V2__second.rs");
+        let sql2 = migrations_dir.join("2V__second.rs");
         fs::File::create(&sql2).unwrap();
 
         let mut mods: Vec<PathBuf> = find_migration_files(migrations_dir, MigrationType::All)
@@ -167,9 +167,9 @@ mod tests {
         let tmp_dir = TempDir::new().unwrap();
         let migrations_dir = tmp_dir.path().join("migrations");
         fs::create_dir(&migrations_dir).unwrap();
-        let sql1 = migrations_dir.join("V1first.rs");
+        let sql1 = migrations_dir.join("1Vfirst.rs");
         fs::File::create(sql1).unwrap();
-        let sql2 = migrations_dir.join("V2second.rs");
+        let sql2 = migrations_dir.join("2Vsecond.rs");
         fs::File::create(sql2).unwrap();
 
         let mut mods = find_migration_files(migrations_dir, MigrationType::All).unwrap();
@@ -181,9 +181,9 @@ mod tests {
         let tmp_dir = TempDir::new().unwrap();
         let migrations_dir = tmp_dir.path().join("migrations");
         fs::create_dir(&migrations_dir).unwrap();
-        let sql1 = migrations_dir.join("V1__first.sql");
+        let sql1 = migrations_dir.join("1V__first.sql");
         fs::File::create(&sql1).unwrap();
-        let sql2 = migrations_dir.join("V2__second.sql");
+        let sql2 = migrations_dir.join("2V__second.sql");
         fs::File::create(&sql2).unwrap();
 
         let mut mods: Vec<PathBuf> = find_migration_files(migrations_dir, MigrationType::All)
@@ -199,10 +199,12 @@ mod tests {
         let tmp_dir = TempDir::new().unwrap();
         let migrations_dir = tmp_dir.path().join("migrations");
         fs::create_dir(&migrations_dir).unwrap();
-        let sql1 = migrations_dir.join("U1__first.sql");
+        let sql1 = migrations_dir.join("1U__first.sql");
         fs::File::create(&sql1).unwrap();
-        let sql2 = migrations_dir.join("U2__second.sql");
+        let sql2 = migrations_dir.join("2U__second.sql");
         fs::File::create(&sql2).unwrap();
+        let sql3 = migrations_dir.join("2R__second.sql");
+        fs::File::create(&sql3).unwrap();
 
         let mut mods: Vec<PathBuf> = find_migration_files(migrations_dir, MigrationType::All)
             .unwrap()
@@ -210,6 +212,7 @@ mod tests {
         mods.sort();
         assert_eq!(sql1.canonicalize().unwrap(), mods[0]);
         assert_eq!(sql2.canonicalize().unwrap(), mods[1]);
+        assert_eq!(sql3.canonicalize().unwrap(), mods[3]);
     }
 
     #[test]
@@ -217,9 +220,9 @@ mod tests {
         let tmp_dir = TempDir::new().unwrap();
         let migrations_dir = tmp_dir.path().join("migrations");
         fs::create_dir(&migrations_dir).unwrap();
-        let sql1 = migrations_dir.join("V1first.sql");
+        let sql1 = migrations_dir.join("1Vfirst.sql");
         fs::File::create(sql1).unwrap();
-        let sql2 = migrations_dir.join("V2second.sql");
+        let sql2 = migrations_dir.join("2Vsecond.sql");
         fs::File::create(sql2).unwrap();
 
         let mut mods = find_migration_files(migrations_dir, MigrationType::All).unwrap();
@@ -231,16 +234,16 @@ mod tests {
         let tmp_dir = TempDir::new().unwrap();
         let migrations_dir = tmp_dir.path().join("migrations");
         fs::create_dir(&migrations_dir).unwrap();
-        let sql1 = migrations_dir.join("V1__first.sql");
+        let sql1 = migrations_dir.join("1V__first.sql");
         fs::File::create(&sql1).unwrap();
-        let sql2 = migrations_dir.join("V2__second.sql");
+        let sql2 = migrations_dir.join("2V__second.sql");
         fs::File::create(&sql2).unwrap();
-        let rs3 = migrations_dir.join("V3__third.rs");
+        let rs3 = migrations_dir.join("3V__third.rs");
         fs::File::create(&rs3).unwrap();
 
         let migrations = load_sql_migrations(migrations_dir).unwrap();
         assert_eq!(migrations.len(), 2);
-        assert_eq!(&migrations[0].to_string(), "V1__first");
-        assert_eq!(&migrations[1].to_string(), "V2__second");
+        assert_eq!(&migrations[0].to_string(), "1V__first");
+        assert_eq!(&migrations[1].to_string(), "2V__second");
     }
 }
