@@ -86,6 +86,7 @@ pub fn find_migration_files(
     let file_paths = WalkDir::new(location)
         .into_iter()
         .filter_map(Result::ok)
+        .filter(|p| !p.file_type().is_dir())
         .map(DirEntry::into_path)
         // filter by migration file regex
         .filter(
