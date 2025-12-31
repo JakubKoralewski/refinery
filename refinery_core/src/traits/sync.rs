@@ -277,19 +277,19 @@ pub fn migrate<T: Transaction>(
                 log::log!(next.log_before_tx.level, "{}:\n{migrations_display}", next.log_before_tx.msg);
                 transaction
                     .execute(sql)
-                    .migration_err("error applying batch migration", || [].into_iter())?;
+                    .migration_err(|| "error applying batch migration", || [].into_iter())?;
             },
             MigrateReusableResult::Itemized { sql, current_migration } => {
                 log::log!(next.log_before_tx.level, "{}: {current_migration}", next.log_before_tx.msg);
                 transaction
                     .execute([sql].into_iter())
-                    .migration_err("error applying single migration", || next.applied_migrations.cloned())?;
+                    .migration_err(|| format!("error applying single migration: {current_migration}"), || next.applied_migrations.cloned())?;
             }
             MigrateReusableResult::ItemizedMetaInsert { sql, current_migration } => {
                 log::log!(next.log_before_tx.level, "{}: {current_migration}", next.log_before_tx.msg);
                 transaction
                     .execute([sql].into_iter())
-                    .migration_err("error applying update", || next.applied_migrations.cloned())?;
+                    .migration_err(|| format!("error applying update: {current_migration}"), || next.applied_migrations.cloned())?;
             }
         }
     }
@@ -320,7 +320,7 @@ where
         self.execute(
             [Self::assert_migrations_table_query(migration_table_name)].into_iter(),
         )
-        .migration_err("error asserting migrations table", || [].into_iter())
+        .migration_err(|| "error asserting migrations table", || [].into_iter())
     }
 
     fn get_last_applied_migration(
@@ -329,7 +329,7 @@ where
     ) -> Result<Option<Migration>, Error> {
         let mut migrations = self
             .query(Self::get_last_applied_migration_query(migration_table_name).as_str())
-            .migration_err("error getting last applied migration", || [].into_iter())?;
+            .migration_err(|| "error getting last applied migration", || [].into_iter())?;
 
         Ok(migrations.pop())
     }
@@ -340,7 +340,7 @@ where
     ) -> Result<Vec<Migration>, Error> {
         let migrations = self
             .query(Self::get_applied_migrations_query(migration_table_name).as_str())
-            .migration_err("error getting applied migrations", || [].into_iter())?;
+            .migration_err(|| "error getting applied migrations", || [].into_iter())?;
 
         Ok(migrations)
     }

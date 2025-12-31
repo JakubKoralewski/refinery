@@ -75,17 +75,18 @@ pub enum Kind {
 }
 
 // Helper trait for adding custom messages and applied migrations to Connection error's.
-pub trait WrapMigrationError<'e, T, E, Iter: Iterator<Item=Migration>> {
-    fn migration_err(self, msg: &str, report: impl FnOnce() -> Iter) -> Result<T, Error>;
+pub trait WrapMigrationError<'e, T, E, Msg, Iter: Iterator<Item=Migration>> {
+    fn migration_err(self, msg: impl FnOnce() -> Msg, report: impl FnOnce() -> Iter) -> Result<T, Error>;
 }
 
-impl<'e, T, E, Iter: Iterator<Item=Migration>> WrapMigrationError<'e, T, E, Iter> for Result<T, E>
+impl<'e, T, E, Msg, Iter: Iterator<Item=Migration>> WrapMigrationError<'e, T, E, Msg, Iter> for Result<T, E>
 where
     E: std::error::Error + Send + Sync + 'static,
+    Msg: Into<String>
 {
     fn migration_err(
         self,
-        msg: &str,
+        msg: impl FnOnce() -> Msg,
         applied_migrations: impl FnOnce() -> Iter,
     ) -> Result<T, Error> {
         match self {
@@ -98,7 +99,7 @@ where
                     Some(Report::new(reportable))
                 };
                 Err(Error {
-                    kind: Box::new(Kind::Connection(msg.into(), Box::new(err))),
+                    kind: Box::new(Kind::Connection(msg().into(), Box::new(err))),
                     report
                 })}
             ,

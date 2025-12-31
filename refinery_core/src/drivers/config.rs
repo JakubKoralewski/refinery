@@ -69,8 +69,8 @@ macro_rules! with_connection {
                 cfg_if::cfg_if! {
                     if #[cfg(feature = "mysql")] {
                         let url = crate::config::build_db_url("mysql", &$config);
-                        let opts = mysql::Opts::from_url(&url).migration_err("could not parse url", || [].into_iter())?;
-                        let conn = mysql::Conn::new(opts).migration_err("could not connect to database", || [].into_iter())?;
+                        let opts = mysql::Opts::from_url(&url).migration_err(|| "could not parse url", || [].into_iter())?;
+                        let conn = mysql::Conn::new(opts).migration_err(|| "could not connect to database", || [].into_iter())?;
                         $op(conn)
                     } else {
                         panic!("tried to migrate from config for a mysql database, but feature mysql not enabled!");
@@ -82,7 +82,7 @@ macro_rules! with_connection {
                     if #[cfg(feature = "rusqlite")] {
                         //may have been checked earlier on config parsing, even if not let it fail with a Rusqlite db file not found error
                         let path = $config.db_path().map(|p| p.to_path_buf()).unwrap_or_default();
-                        let conn = rusqlite::Connection::open_with_flags(path, rusqlite::OpenFlags::SQLITE_OPEN_READ_WRITE).migration_err("could not open database", || [].into_iter())?;
+                        let conn = rusqlite::Connection::open_with_flags(path, rusqlite::OpenFlags::SQLITE_OPEN_READ_WRITE).migration_err(|| "could not open database", || [].into_iter())?;
                         $op(conn)
                     } else {
                         panic!("tried to migrate from config for a sqlite database, but feature rusqlite not enabled!");
@@ -98,9 +98,9 @@ macro_rules! with_connection {
                         if $config.use_tls() {
                             let connector = native_tls::TlsConnector::new().unwrap();
                             let connector = postgres_native_tls::MakeTlsConnector::new(connector);
-                            conn = postgres::Client::connect(path.as_str(), connector).migration_err("could not connect to database", || [].into_iter())?;
+                            conn = postgres::Client::connect(path.as_str(), connector).migration_err(|| "could not connect to database", || [].into_iter())?;
                         } else {
-                            conn = postgres::Client::connect(path.as_str(), postgres::NoTls).migration_err("could not connect to database", || [].into_iter())?;
+                            conn = postgres::Client::connect(path.as_str(), postgres::NoTls).migration_err(|| "could not connect to database", || [].into_iter())?;
                         }
 
                         $op(conn)
@@ -129,7 +129,7 @@ macro_rules! with_connection_async {
                 cfg_if::cfg_if! {
                     if #[cfg(feature = "mysql_async")] {
                         let url = crate::config::build_db_url("mysql", $config);
-                        let pool = mysql_async::Pool::from_url(&url).migration_err("could not connect to the database", || [].into_iter())?;
+                        let pool = mysql_async::Pool::from_url(&url).migration_err(|| "could not connect to the database", || [].into_iter())?;
                         $op(pool).await
                     } else {
                         panic!("tried to migrate async from config for a mysql database, but feature mysql_async not enabled!");
@@ -146,7 +146,7 @@ macro_rules! with_connection_async {
                         if $config.use_tls() {
                             let connector = native_tls::TlsConnector::new().unwrap();
                             let connector = postgres_native_tls::MakeTlsConnector::new(connector);
-                            let (client, connection) = tokio_postgres::connect(path.as_str(), connector).await.migration_err("could not connect to database", || [].into_iter())?;
+                            let (client, connection) = tokio_postgres::connect(path.as_str(), connector).await.migration_err(|| "could not connect to database", || [].into_iter())?;
                             tokio::spawn(async move {
                                 if let Err(e) = connection.await {
                                     eprintln!("connection error: {}", e);
@@ -154,7 +154,7 @@ macro_rules! with_connection_async {
                             });
                             $op(client).await
                         } else {
-                            let (client, connection) = tokio_postgres::connect(path.as_str(), tokio_postgres::NoTls).await.migration_err("could not connect to database", || [].into_iter())?;
+                            let (client, connection) = tokio_postgres::connect(path.as_str(), tokio_postgres::NoTls).await.migration_err(|| "could not connect to database", || [].into_iter())?;
                             tokio::spawn(async move {
                                 if let Err(e) = connection.await {
                                     eprintln!("connection error: {}", e);
@@ -178,10 +178,10 @@ macro_rules! with_connection_async {
                         let config: Config = (&*$config).try_into()?;
                         let tcp = TcpStream::connect(config.get_addr())
                             .await
-                            .migration_err("could not connect to database", || [].into_iter())?;
+                            .migration_err(|| "could not connect to database", || [].into_iter())?;
                         let client = Client::connect(config, tcp.compat_write())
                             .await
-                            .migration_err("could not connect to database", || [].into_iter())?;
+                            .migration_err(|| "could not connect to database", || [].into_iter())?;
 
                         $op(client).await
                     } else {
@@ -206,7 +206,7 @@ impl crate::Migrate for Config {
                 &GET_LAST_APPLIED_MIGRATION_QUERY
                     .replace("%MIGRATION_TABLE_NAME%", migration_table_name),
             )
-            .migration_err("error getting last applied migration", || [].into_iter())?;
+            .migration_err(|| "error getting last applied migration", || [].into_iter())?;
 
             Ok(migrations.pop())
         })
@@ -222,7 +222,7 @@ impl crate::Migrate for Config {
                 &GET_APPLIED_MIGRATIONS_QUERY
                     .replace("%MIGRATION_TABLE_NAME%", migration_table_name),
             )
-            .migration_err("error getting applied migrations", || [].into_iter())?;
+            .migration_err(|| "error getting applied migrations", || [].into_iter())?;
 
             Ok(migrations)
         })
@@ -269,7 +269,7 @@ impl crate::AsyncMigrate for Config {
                     .replace("%MIGRATION_TABLE_NAME%", migration_table_name),
             )
             .await
-            .migration_err("error getting last applied migration", || [].into_iter())?;
+            .migration_err(|| "error getting last applied migration", || [].into_iter())?;
 
             Ok(migrations.pop())
         })
@@ -286,7 +286,7 @@ impl crate::AsyncMigrate for Config {
                     .replace("%MIGRATION_TABLE_NAME%", migration_table_name),
             )
             .await
-            .migration_err("error getting last applied migration", || [].into_iter())?;
+            .migration_err(|| "error getting last applied migration", || [].into_iter())?;
             Ok(migrations)
         })
     }

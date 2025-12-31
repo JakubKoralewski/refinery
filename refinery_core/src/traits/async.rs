@@ -39,21 +39,21 @@ async fn migrate_inner<T: AsyncTransaction>(
                 transaction
                     .execute(sql)
                     .await
-                    .migration_err("error applying batch migration async", || [].into_iter())?;
+                    .migration_err(|| "error applying batch migration async", || [].into_iter())?;
             },
             MigrateReusableResult::Itemized { sql, current_migration } => {
                 log::log!(migration.log_before_tx.level, "{}: {current_migration}", migration.log_before_tx.msg);
                 transaction
                     .execute([sql].into_iter())
                     .await
-                    .migration_err("error applying single migration async", || migration.applied_migrations.cloned())?;
+                    .migration_err(|| format!("error applying single migration async: {current_migration}"), || migration.applied_migrations.cloned())?;
             }
             MigrateReusableResult::ItemizedMetaInsert { sql, current_migration } => {
                 log::log!(migration.log_before_tx.level, "{}: {current_migration}", migration.log_before_tx.msg);
                 transaction
                     .execute([sql].into_iter())
                     .await
-                    .migration_err("error applying update async", || migration.applied_migrations.cloned())?;
+                    .migration_err(|| format!("error applying update async: {current_migration}"), || migration.applied_migrations.cloned())?;
             }
         }
     }
@@ -85,7 +85,7 @@ where
         let mut migrations = self
             .query(Self::get_last_applied_migration_query(migration_table_name).as_ref())
             .await
-            .migration_err("error getting last applied migration", || [].into_iter())?;
+            .migration_err(|| "error getting last applied migration", || [].into_iter())?;
 
         Ok(migrations.pop())
     }
@@ -97,7 +97,7 @@ where
         let migrations = self
             .query(Self::get_applied_migrations_query(migration_table_name).as_ref())
             .await
-            .migration_err("error getting applied migrations", || [].into_iter())?;
+            .migration_err(|| "error getting applied migrations", || [].into_iter())?;
 
         Ok(migrations)
     }
@@ -115,12 +115,12 @@ where
             [Self::assert_migrations_table_query(migration_table_name)].into_iter(),
         )
         .await
-        .migration_err("error asserting migrations table", || [].into_iter())?;
+        .migration_err(|| "error asserting migrations table", || [].into_iter())?;
 
         let applied_migrations = self
             .get_applied_migrations(migration_table_name)
             .await
-            .migration_err("error getting current schema version", || [].into_iter())?;
+            .migration_err(|| "error getting current schema version", || [].into_iter())?;
 
         let migrations = verify_migrations(
             applied_migrations,
